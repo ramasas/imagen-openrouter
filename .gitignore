@@ -1,0 +1,9 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs/imagen-openrouter/config
+/.vs/imagen-openrouter/CopilotIndices/17.14.1696.13113
+/.vs/imagen-openrouter/FileContentIndex
+/.vs/imagen-openrouter/v17
+/.vs
