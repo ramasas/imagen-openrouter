@@ -133,6 +133,9 @@
         <div id="quick-chips" class="quick-chips-container">
           <!-- Quick chips populated by JS -->
         </div>
+        <button type="button" id="btn-open-casting" class="btn btn-secondary">
+          🎭 Casting
+        </button>
         <button type="button" id="btn-open-deck" class="btn btn-secondary">
           🎬 Shot Deck
         </button>
@@ -259,6 +262,37 @@
           <span class="staging-placeholder">Select cards to build your shot...</span>
         </div>
         <button class="btn btn-primary" id="btn-apply-shots" disabled>Apply to Prompt</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Casting Director Modal -->
+  <div class="modal" id="castingModal">
+    <div class="modal-overlay" id="castingOverlay"></div>
+    <div class="modal-content shot-deck-container">
+      <div class="shot-deck-header">
+        <h2>🎭 Casting & Character Blender</h2>
+        <button class="modal-close" id="castingClose">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="shot-deck-body" style="padding: 1.5rem;">
+        <p style="color: var(--text-secondary); margin-top: 0; margin-bottom: 1.5rem; font-size: 0.9rem;">
+          Add archetypes or celebrities. The Director AI will translate their combined features into pure anatomical descriptions for consistent generation.
+        </p>
+
+        <div id="castingRowsContainer">
+          <!-- Dynamic rows injected here -->
+        </div>
+
+        <button type="button" class="btn btn-ghost" id="btnAddCastingRow" style="margin-top: 1rem;">
+          + Add Reference Persona
+        </button>
+      </div>
+
+      <div class="shot-deck-footer" style="justify-content: flex-end;">
+        <button class="btn btn-primary" id="btn-apply-casting">Apply to Scene</button>
       </div>
     </div>
   </div>

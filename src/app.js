@@ -104,6 +104,10 @@ const state = {
   },
   stagingSelections: {}, // Populated dynamically when the modal opens
 
+  // New Casting Array
+  casting: [], // e.g., [{ id: 1, name: 'Donald Duck', weight: 70, focus: 'overall' }]
+  stagingCasting: [],
+
   references: [],
   images: [],
   currentImage: null,
@@ -474,6 +478,9 @@ async function init() {
 
   // Initialize Shoct Deck
   initShotDeck();
+
+  // Initialize Casting Deck
+  initCastingDeck();
 }
 
 // ===== Initialize the UI =====
@@ -481,6 +488,114 @@ function initShotDeck() {
   renderQuickChips();
   renderActiveDeckBar();
   setupShotDeckListeners();
+}
+
+function initCastingDeck() {
+  const modal = document.getElementById('castingModal');
+  const overlay = document.getElementById('castingOverlay');
+  const closeBtn = document.getElementById('castingClose');
+  const openBtn = document.getElementById('btn-open-casting');
+  const addRowBtn = document.getElementById('btnAddCastingRow');
+  const applyBtn = document.getElementById('btn-apply-casting');
+
+  const closeModal = () => modal.classList.remove('active');
+
+  if (openBtn) {
+    openBtn.onclick = () => {
+      // Clone active state into staging
+      stagingCasting = JSON.parse(JSON.stringify(state.casting));
+      renderCastingRows();
+      modal.classList.add('active');
+    };
+  }
+  
+  if (closeBtn) closeBtn.onclick = closeModal;
+  if (overlay) overlay.onclick = closeModal;
+
+  if (addRowBtn) {
+    addRowBtn.onclick = () => {
+      stagingCasting.push({ id: Date.now(), name: '', weight: 50, focus: 'overall' });
+      renderCastingRows();
+    };
+  }
+
+  if (applyBtn) {
+    applyBtn.onclick = () => {
+      // Commit non-empty rows to state
+      state.casting = stagingCasting.filter(p => p.name.trim() !== '');
+      closeModal();
+      showToast(`Saved ${state.casting.length} reference personas.`, 'success');
+    };
+  }
+}
+
+function renderCastingRows() {
+  const container = document.getElementById('castingRowsContainer');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (stagingCasting.length === 0) {
+    container.innerHTML = '<span class="staging-placeholder">No references added yet.</span>';
+    return;
+  }
+
+  stagingCasting.forEach(persona => {
+    const row = document.createElement('div');
+    row.className = 'casting-row';
+    
+    row.innerHTML = `
+      <input type="text" class="text-input casting-input-name" placeholder="Name (e.g. Mads Mikkelsen)" value="${escapeHtml(persona.name)}" data-id="${persona.id}">
+      
+      <div class="casting-slider-group">
+        <label><span>Influence:</span> <span class="weight-val">${persona.weight}%</span></label>
+        <input type="range" min="5" max="100" step="5" value="${persona.weight}" data-id="${persona.id}">
+      </div>
+      
+      <select class="casting-select-focus" data-id="${persona.id}">
+        <option value="overall" ${persona.focus === 'overall' ? 'selected' : ''}>Overall Features</option>
+        <option value="bone structure and jawline" ${persona.focus === 'bone structure and jawline' ? 'selected' : ''}>Bone Structure & Jaw</option>
+        <option value="eyes and gaze" ${persona.focus === 'eyes and gaze' ? 'selected' : ''}>Eyes & Gaze</option>
+        <option value="hair and styling" ${persona.focus === 'hair and styling' ? 'selected' : ''}>Hair & Styling</option>
+      </select>
+      
+      <button class="casting-btn-remove" data-id="${persona.id}" title="Remove">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    `;
+    container.appendChild(row);
+  });
+
+  // Attach live listeners for this render pass
+  container.querySelectorAll('.casting-input-name').forEach(input => {
+    input.oninput = (e) => {
+      const p = stagingCasting.find(x => x.id == e.target.dataset.id);
+      if (p) p.name = e.target.value;
+    };
+  });
+
+  container.querySelectorAll('input[type="range"]').forEach(slider => {
+    slider.oninput = (e) => {
+      const p = stagingCasting.find(x => x.id == e.target.dataset.id);
+      if (p) {
+        p.weight = parseInt(e.target.value);
+        e.target.previousElementSibling.querySelector('.weight-val').textContent = `${p.weight}%`;
+      }
+    };
+  });
+
+  container.querySelectorAll('.casting-select-focus').forEach(select => {
+    select.onchange = (e) => {
+      const p = stagingCasting.find(x => x.id == e.target.dataset.id);
+      if (p) p.focus = e.target.value;
+    };
+  });
+
+  container.querySelectorAll('.casting-btn-remove').forEach(btn => {
+    btn.onclick = (e) => {
+      stagingCasting = stagingCasting.filter(x => x.id != e.currentTarget.dataset.id);
+      renderCastingRows();
+    };
+  });
 }
 
 // ===== Quick Chips (Single Select Injection) =====
@@ -1076,9 +1191,25 @@ function clearAllReferences() {
 
 // ===== Prompt Enhancement =====
 async function expandPromptWithLLM(draftText, apiKey) {
-  const systemPrompt = `You are a Director of Photography and prompt engineer for FLUX.
+  // 1. Build the Casting Instructions if personas exist
+  let castingInstructions = "";
+  if (state.casting && state.casting.length > 0) {
+    const blendDetails = state.casting.map(p => 
+      `${p.weight}% ${p.name} (focusing on: ${p.focus})`
+    ).join(", ");
+    
+    castingInstructions = `
+CRITICAL CASTING INSTRUCTIONS:
+The user has requested a specific character blend: [${blendDetails}].
+You MUST translate these celebrities into pure, vivid anatomical descriptions (e.g., bone structure, eye shape, vibe) based on their assigned weights and focus areas. 
+DO NOT use the actual celebrity names in the final prompt. Describe their physical traits instead to avoid AI safety filters.`;
+  }
+
+  // 2. The upgraded System Prompt
+  const systemPrompt = `You are an expert Director of Photography, Concept Artist, and prompt engineer for FLUX.
 Rewrite the user's idea into a concise 2-3 sentence cinematic scene description.
 Include: Subject & wardrobe, setting & background, key light source & atmosphere, and camera/lens (e.g., 35mm/85mm).
+${castingInstructions}
 Output ONLY the raw description. No conversational filler, no quotes.`;
 
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -1090,7 +1221,7 @@ Output ONLY the raw description. No conversational filler, no quotes.`;
       "X-Title": "Custom FLUX Studio"
     },
     body: JSON.stringify({
-      model: "google/gemini-2.5-flash", // Fast, reliable, and costs ~$0.0001 per call
+      model: "google/gemini-2.5-flash", // Fast compiler
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: draftText }

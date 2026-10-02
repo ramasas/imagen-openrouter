@@ -1198,6 +1198,66 @@ body {
   color: var(--text-primary);
 }
 
+/* Casting Blender Rows */
+.casting-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  background: var(--bg-secondary);
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.casting-input-name {
+  flex: 2;
+  min-width: 150px;
+}
+
+.casting-slider-group {
+  flex: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+  .casting-slider-group label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .casting-slider-group input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent-color);
+  }
+
+.casting-select-focus {
+  flex: 1.5;
+  padding: 0.5rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 4px;
+}
+
+.casting-btn-remove {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+  .casting-btn-remove:hover {
+    color: #ef4444; /* red */
+  }
+
 /* Modal Card Overwrite Indicator */
 .shot-card.selected {
   border-color: var(--accent-color);
